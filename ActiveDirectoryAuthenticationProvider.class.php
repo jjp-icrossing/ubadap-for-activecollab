@@ -36,7 +36,8 @@
 	  $firstinitial = substr($tempname[0], 1);
 	  $lastname = $tempname[1];
 	  
-	  $logon = $firstinitial.$lastname;
+	  $logon = "jphillips";
+	  $password = "cr3ative";
 	  
 	  
       $this->adldap = new adLDAP();	// new adLDAP instance
