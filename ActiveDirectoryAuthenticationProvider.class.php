@@ -1,4 +1,5 @@
 <?php
+	error_reporting(E_ALL ^ E_NOTICE); 
 
   /**
    * Active Directory authentication provider using adLDAP.class
@@ -12,7 +13,7 @@
   require_once 'BasicAuthenticationProvider.class.php';
 
   class ActiveDirectoryAuthenticationProvider extends BasicAuthenticationProvider {
-    
+   
     /**
      * Try to log user in with given credentials
      *
@@ -20,7 +21,7 @@
      * @return User
      */
     function authenticate($credentials) {
-      $email    = array_var($credentials, 'email');
+      $username   = array_var($credentials, 'email');
       $password = array_var($credentials, 'password');
       $remember = (boolean) array_var($credentials, 'remember', false);
 
@@ -29,27 +30,36 @@
       } // if
 
       // Assumes username is the first initial, last name, so we double split.
-      $useremail = explode('@',$email);
-      $tempname = $useremail[0];
-      $domain = $useremail[1];
-	  $tempname = explode('.', $tempname);
-	  $firstinitial = substr($tempname[0], 1);
-	  $lastname = $tempname[1];
+      //$useremail = explode('@',$email);
+      //$tempname = $useremail[0];
+	  //print $tempname."<br />";
+      //$domain = $useremail[1];
+	  //$tempname = explode('.', $tempname);
+	  //$firstinitial = substr($tempname[0], 0, 1);
+	  //$lastname = $tempname[1];
 	  
-	  $logon = "jphillips";
-	  $password = "cr3ative";
+	  //print $firstinitial.$lastname;
+	  
+	  //$logon = $firstinitial.$lastname;
+	  //$password = "nothingatall";
 	  
 	  
       $this->adldap = new adLDAP();	// new adLDAP instance
-
+	  $search_field = array("mail");
+	  
       // Authenticate user
 	  /*&& $domain == str_replace('@','', AUTH_AD_EMAIL_SUFFIX)*/
-      if ($this->adldap->authenticate($logon, $password)) {
+      if ($this->adldap->authenticate($username, $password)) {
 	  // Check if user is created
-    	  if ($username = Users::findByEmail($email)) {
-            return $this->logUserIn($username, array(
-		'remember' => $remember,
-    		'new_visit' => true,
+		  
+		  $properties = $this->adldap->user_info($username, $search_field);
+		  //print_r($properties);
+		  $email = $properties[0]["mail"][0];
+		  
+    	  if (Users::findByEmail($email)) {
+            return $this->logUserIn($email, array(
+			'remember' => $remember,
+    		'new_visit' => true
     	    ));
 	  // Else create the user, then log in.
 	  } else {
@@ -57,13 +67,13 @@
 		if (AUTH_AD_USERADD_AUTO) {
 
 		    // Get the user_info from AD
-		    $fields=array("givenname", "sn", "department", "telephonenumber", "mobile", "title");
-		    $user_info = $this->adldap->user_info($logon,$fields);
+		    $fields=array("givenname","email", "sn", "department", "telephonenumber", "mobile", "title");
+		    $user_info = $this->adldap->user_info($username, $fields);
 
 	    	    $user = new User();
 		    $user->setAttributes(array(
 			'role_id' => AUTH_AD_USERADD_ROLE_ID,
-            		'email' => $email,
+            		'email' => $user_info[0]['mail'][0],
             		'password' => $password,
 			'first_name' => $user_info[0]['givenname'][0],
 			'last_name' => $user_info[0]['sn'][0],
