@@ -28,15 +28,22 @@
             return new error('LDAP error: PHP LDAP extension not found.');
       } // if
 
-      // Assumes username is the e-mail account name, so we split it.
+      // Assumes username is the first initial, last name, so we double split.
       $useremail = explode('@',$email);
-      $logon = $useremail[0];
+      $tempname = $useremail[0];
       $domain = $useremail[1];
-
+	  $tempname = explode('.', $tempname);
+	  $firstinitial = substr($tempname[0], 1);
+	  $lastname = $tempname[1];
+	  
+	  $logon = $firstinitial.$lastname;
+	  
+	  
       $this->adldap = new adLDAP();	// new adLDAP instance
 
       // Authenticate user
-      if ($this->adldap->authenticate($logon, $password) && $domain == str_replace('@','', AUTH_AD_EMAIL_SUFFIX)) {
+	  /*&& $domain == str_replace('@','', AUTH_AD_EMAIL_SUFFIX)*/
+      if ($this->adldap->authenticate($logon, $password)) {
 	  // Check if user is created
     	  if ($username = Users::findByEmail($email)) {
             return $this->logUserIn($username, array(
